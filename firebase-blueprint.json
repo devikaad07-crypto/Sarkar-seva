@@ -1,0 +1,69 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile and eligibility tracking",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "age": { "type": "number" },
+        "gender": { "type": "string" },
+        "mobile": { "type": "string" },
+        "state": { "type": "string" },
+        "district": { "type": "string" },
+        "income": { "type": "number" },
+        "occupation": { "type": "string" },
+        "caste": { "type": "string" },
+        "familyMembers": { "type": "number" },
+        "hasDisability": { "type": "boolean" },
+        "isSeniorCitizen": { "type": "boolean" },
+        "hasBPLCard": { "type": "boolean" },
+        "language": { "type": "string" },
+        "onboarded": { "type": "boolean" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "name", "age", "gender", "mobile", "caste"]
+    },
+    "Application": {
+      "title": "Scheme Application",
+      "description": "Record of a user applying for or saving a scheme",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "schemeId": { "type": "string" },
+        "status": { "type": "string", "enum": ["saved", "applied", "in_review", "approved", "rejected"] },
+        "appliedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "schemeId", "status"]
+    },
+    "Document": {
+      "title": "Verified Document",
+      "description": "User uploaded verification documents",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "type": { "type": "string", "enum": ["aadhaar", "caste", "income", "pwd", "other"] },
+        "name": { "type": "string" },
+        "url": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "verified", "rejected"] },
+        "uploadedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "type", "name", "status"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile data"
+    },
+    "/users/{userId}/applications/{appId}": {
+      "schema": "Application",
+      "description": "User specific scheme applications"
+    },
+    "/users/{userId}/documents/{docId}": {
+      "schema": "Document",
+      "description": "Citizen verification documents"
+    }
+  }
+}

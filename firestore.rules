@@ -1,0 +1,74 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helpers ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+       return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // --- User Validation ---
+    function isValidUser(data) {
+      return data.keys().hasAll(['userId', 'name', 'age', 'gender']) &&
+             data.userId == request.auth.uid &&
+             data.name is string && data.name.size() <= 100 &&
+             data.age is number && data.age >= 0 && data.age <= 120 &&
+             data.gender is string &&
+             (data.income == null || data.income is number) &&
+             (data.mobile == null || data.mobile is string);
+    }
+
+    // --- Application Validation ---
+    function isValidApplication(data) {
+      return data.keys().hasAll(['userId', 'schemeId', 'status']) &&
+             data.userId == request.auth.uid &&
+             data.schemeId is string &&
+             data.status in ['saved', 'applied', 'in_review', 'approved', 'rejected'];
+    }
+
+    // --- Resource Matches ---
+
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUser(request.resource.data);
+      allow update: if isOwner(userId) && isValidUser(request.resource.data) &&
+                      request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+                        'name', 'age', 'gender', 'mobile', 'state', 'district', 'income', 
+                        'occupation', 'caste', 'familyMembers', 'hasDisability', 
+                        'hasBPLCard', 'language', 'onboarded', 'updatedAt'
+                      ]);
+      
+      match /applications/{appId} {
+        allow list: if isOwner(userId);
+        allow get: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidApplication(request.resource.data);
+        allow update: if isOwner(userId) && isValidApplication(request.resource.data) &&
+                        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'appliedAt']);
+        allow delete: if isOwner(userId);
+      }
+
+      match /documents/{docId} {
+        allow list: if isOwner(userId);
+        allow get: if isOwner(userId);
+        allow create: if isOwner(userId) && 
+                        request.resource.data.keys().hasAll(['userId', 'type', 'name', 'status']) &&
+                        request.resource.data.type in ['aadhaar', 'caste', 'income', 'pwd', 'other'];
+        allow update: if isOwner(userId) && 
+                        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'url']);
+        allow delete: if isOwner(userId);
+      }
+    }
+  }
+}

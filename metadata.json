@@ -1,0 +1,6 @@
+{
+  "name": "Sarkar Seva",
+  "description": "Unified Government Scheme Navigator for Indian citizens.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": []
+}
